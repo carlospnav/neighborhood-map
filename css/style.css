@@ -65,6 +65,11 @@ li{
   cursor: pointer;
 }
 
+.gm-style-iw img{
+  float: right;
+  margin: 10px;
+}
+
 li:hover{
   background-color: 	#F8F8FF;
 }

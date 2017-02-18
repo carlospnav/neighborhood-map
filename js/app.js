@@ -1,8 +1,8 @@
 
 //MODEL
-var mapSettings = {
-  initialCoords: { lat: 55.9485947, lng: -3.1999135 },
-  locations: [
+function MapSettings() {
+  this.initialCoords = { lat: 55.9485947, lng: -3.1999135 },
+  this.locations = [
     { name: "The Meadows (park)", coords: { lat: 55.9412507 , lng: -3.191701 }, id: 0 },
     { name: "Edinburgh Castle", coords: { lat: 55.9485947 , lng: -3.1999135 }, id: 1 },
     { name: "University of Edinburgh", coords: { lat: 55.9443127 , lng: -3.1901937 }, id: 2 },
@@ -19,10 +19,12 @@ var mapSettings = {
     { name: "Edinburgh Waverley railway station", coords: { lat: 55.9545669, lng: -3.1671449 }, id: 13 },
     { name: "Edinburgh Napier University", coords: { lat: 55.933459, lng: -3.2118371 }, id: 14 },
   ],
-  styles: [{
+  this.styles = [{
 
   }]
 }
+
+var mapSettings = new MapSettings();
 
 
 
@@ -43,10 +45,18 @@ function initMap(){
         position: value.coords,
         map: map,
         animation: google.maps.Animation.DROP,
-        title: value.name
+        title: value.name,
       });
       marker.addListener('click', function(){
         populateInfoWindow(this);
+      });
+      marker.addListener('mouseover', function(e) {
+        this.setAnimation(google.maps.Animation.BOUNCE);
+        e.stop();
+      });
+      marker.addListener('mouseout', function(e) {
+        this.setAnimation(null);
+        e.stop();
       });
       tempMarkers.push(marker);
     });
@@ -73,27 +83,22 @@ function initMap(){
 
         var blurb = $('<div></div>').html(markup);
 
-        var paragraph = blurb.find('p').slice(0 , 3);
+        var image = $('<div></div>').html(blurb.find('img').first());
+        image.addClass('info-image');
 
-        console.log(paragraph.html());
-        // Remove extra information.
-        blurb.find('table').remove();
+        // Remove all elements that aren't text.
+        blurb.children(':not(p)').remove();
 
-        // Remove redirection notes.
-        blurb.find('.hatnote').remove();
-
-        // Remove any references
-        blurb.find('sup').remove();
-        // Remove links as they will not work
+        // Replace the links with regular text.
         blurb.find('a').each(function() { $(this).replaceWith($(this).html()); });
-        // Remove citation lists.
-        blurb.find('li').remove();
 
-        if (blurb.find('p').length > 1){
-          blurb.find('p').slice(0, 1).remove;
+        // Trims the text if too large.
+        if (blurb.children('p:nth-of-type(2)').text().length > 500){
+          blurb.children('p').slice(2).remove();
         }
+
         // Set the wikipedia content to the info window on the marker.
-        infowindow.setContent(paragraph.html());
+        infowindow.setContent(image.html() + blurb.html());
       },
       error: function(){
         console.log("ERROZÃO!");
@@ -132,6 +137,11 @@ function AppViewModel(){
     }
   }
 
+  this.getIndex = function(event){
+    var index = event.target.getAttribute('data-index');
+    return index;
+  }
+
   //Applies the filter to the markers on the map.
   this.filterButton = function(){
     var filteredLocationNames = [];
@@ -153,10 +163,19 @@ function AppViewModel(){
   }
 
   this.selectLocation = function(data, event){
-    var index = event.target.getAttribute('data-index');
+    var index = self.getIndex(event);
     populateInfoWindow(markers[index]);
   }
 
+  this.ListMarkerBouncer = function(data, event){
+    var index = self.getIndex(event);
+    if (event.type === 'mouseover'){
+      markers[index].setAnimation(google.maps.Animation.BOUNCE);
+    }
+    else if(event.type ==='mouseout'){
+      markers[index].setAnimation(null);      
+    }
+  }
 }
 
 ko.applyBindings(new AppViewModel());

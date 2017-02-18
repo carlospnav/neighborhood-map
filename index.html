@@ -15,7 +15,7 @@
           <button id="filter-btn" data-bind="event: { click: filterButton }">Filter</button>
         </div>
         <ul data-bind="foreach: filteredLocations" class="location-list">
-          <li data-bind="text: name, click: $parent.selectLocation, attr: { 'data-index': id }"></li>
+          <li data-bind="text: name, click: $parent.selectLocation, event: { mouseover: $parent.ListMarkerBouncer, mouseout: $parent.ListMarkerBouncer }, attr: { 'data-index': id }"></li>
         </ul>
       </section>
       <section class="map" id="map"></section>
