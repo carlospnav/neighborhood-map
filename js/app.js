@@ -63,6 +63,17 @@ function initMap(){
     return tempMarkers;
   }
 
+
+  function fitBounds(marker){
+    map.setCenter(marker.getPosition());
+    map.panBy(0, -150);
+    // var bounds = new google.maps.LatLngBounds();
+    // for (var i = 0; i < markers.length; i++){
+    //   bounds.extend(markers[i].position);
+    // }
+    // map.fitBounds(bounds);
+  }
+
   populateInfoWindow = function(marker){
 
     // Send an ajax call to Wikipedia to retrieve information on the points of interest.
@@ -107,6 +118,7 @@ function initMap(){
 
     // Open the info window on the marker.
     infowindow.open(map, marker);
+    fitBounds(marker);
   }
 
   infowindow = new google.maps.InfoWindow();
@@ -175,6 +187,10 @@ function AppViewModel(){
     else if(event.type ==='mouseout'){
       markers[index].setAnimation(null);      
     }
+  }
+
+  this.openMobileControls = function(){
+    $('.controls').first().toggleClass('expanded');
   }
 }
 

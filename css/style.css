@@ -1,3 +1,9 @@
+@import url(http://weloveiconfonts.com/api/?family=fontawesome);
+
+[class*="fontawesome-"]:before {
+  font-family: "FontAwesome", sans-serif;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -17,7 +23,37 @@ html, body{
   width: 100%;
 }
 
+.mobile-menu {
+  display: none;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 10px 10px 0 10px;
+  width: 100%;
+  height: 50px;
+}
+
+.mobile-title-container{
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.mobile-title-container > h3 {
+  font-size: 25px;
+  margin: 0;
+}
+
+
+
+#mobile-btn{
+  border: none;
+  background-color: white;
+  font-size: 20px;
+  height: 35px;
+}
+
 .map, .controls {
+  position: relative;
   height: calc(100% - 20px);
   margin: 10px;
 }
@@ -28,6 +64,12 @@ html, body{
   width: 480px;
   margin-right: 0;
   padding: 0 10px;
+  -webkit-transition: transform 1s;
+  transition: transform 1s;
+}
+
+.expanded{
+  left: 0;
 }
 
 .map{
@@ -76,9 +118,9 @@ li:hover{
 
 h3{
   font-family: 'Lato', sans-serif;
-  font-size: 40px;
+  font-size: 30px;
   font-weight: 900;
-  margin: 0;
+  margin: 10px 10px 0 0;
 }
 
 input[type="text"]{
@@ -88,4 +130,33 @@ input[type="text"]{
     padding: 3%;
     color: #555;
     font: 95% Arial, Helvetica, sans-serif;
+}
+
+@media all and (max-width: 800px){
+
+  .container{
+    flex-flow: row wrap;
+  }
+
+  .controls{
+    position: absolute;
+    top: 50px;
+    left: -500px;
+    width: 85%;
+    z-index: 2;
+    background-color: rgba(70, 70, 70, 0.6);
+    color: white;
+  }
+
+  .expanded{
+    transform: translate(500px);
+  }
+
+  li:hover{
+    background-color: rgba(200, 200, 200, 0.3);
+  }
+
+  .mobile-menu {
+    display: flex;
+  }
 }
