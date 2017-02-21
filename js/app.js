@@ -1,5 +1,5 @@
 
-//MODEL
+// MODEL - This is where the information the map uses to work is stored.
 function MapSettings() {
   this.initialCoords = { lat: 55.9485947, lng: -3.1999135 },
   this.locations = [
@@ -23,20 +23,19 @@ function MapSettings() {
 
   }]
 }
-
 var mapSettings = new MapSettings();
 
 
 
 var map, markers, infowindow, populateInfoWindow;
 function initMap(){
-  //The Map is initialized here using the configuration we find in mapSettings.
+  // The Map is initialized here using the configuration we find in mapSettings.
   map = new google.maps.Map(document.getElementById('map'), {
     center: mapSettings.initialCoords,
     zoom: 13
   });
 
-  //The initial PoI locations are created here and set to the map.
+  // The initial PoI locations are created here and set to the map.
   markers = createMarkersFromLocations(mapSettings.locations);
   function createMarkersFromLocations(locations){
     var tempMarkers = [];
@@ -63,17 +62,21 @@ function initMap(){
     return tempMarkers;
   }
 
-
+  // Auxiliary function used to center the map and provide space
+  // for the infowindows.
   function fitBounds(marker){
     map.setCenter(marker.getPosition());
     map.panBy(0, -150);
-    // var bounds = new google.maps.LatLngBounds();
-    // for (var i = 0; i < markers.length; i++){
-    //   bounds.extend(markers[i].position);
-    // }
-    // map.fitBounds(bounds);
   }
 
+  // Instantiates a new infowindow to be used when the markers are selected.
+  infowindow = new google.maps.InfoWindow();
+  infowindow.addListener('closeclick', function(){
+    infowindow.close();
+  });
+
+  // Function used to populate the infowindow with content from the
+  // wikipedia service.
   populateInfoWindow = function(marker){
 
     // Send an ajax call to Wikipedia to retrieve information on the points of interest.
@@ -87,9 +90,9 @@ function initMap(){
       url: wikiEndPoint,
       dataType: "jsonp",
       contentType: 'text/plain',
+      //Retrieves the markup data from WikiPedia and set it to the infowindow content.
       success: function(data){
 
-        //Retrieves the markup data from WikiPedia and set it to a markup variable.
         var markup = data.parse.text['*'];
 
         var blurb = $('<div></div>').html(markup);
@@ -97,7 +100,7 @@ function initMap(){
         var image = $('<div></div>').html(blurb.find('img').first());
         image.addClass('info-image');
 
-        // Remove all elements that aren't text.
+        // Remove all elements from the blurb that aren't text.
         blurb.children(':not(p)').remove();
 
         // Replace the links with regular text.
@@ -108,11 +111,11 @@ function initMap(){
           blurb.children('p').slice(2).remove();
         }
 
-        // Set the wikipedia content to the info window on the marker.
-        infowindow.setContent(image.html() + blurb.html());
+        // Set the wikipedia content to the infowindow on the marker.
+        infowindow.setContent(image.html() + blurb.html() + "<div class='attribution'>Powered by Wikipedia.</div>");
       },
       error: function(){
-        console.log("ERROZÃO!");
+        infowindow.setContent("<div class='info-error'>There was a problem with the Wikipedia search. Please try again later or contact the administrator.</div>")
       }
     });
 
@@ -120,28 +123,24 @@ function initMap(){
     infowindow.open(map, marker);
     fitBounds(marker);
   }
-
-  infowindow = new google.maps.InfoWindow();
-  infowindow.addListener('closeclick', function(){
-    infowindow.setMarker(null);
-  });
 }
 
+// Knockout ViewModel.
 function AppViewModel(){
   var self = this;
   this.locations = mapSettings.locations;
   this.filteredLocations = ko.observableArray(this.locations);
 
-  //Filters the list of locations on the left Menu using the value
-  //the user typed in the text control.
+  // Filters the list of locations on the left Menu using the value
+  // the user typed in the text control.
   this.filterViewList = function(data, event){
     var value = event.target.value;
-    //If the control is clear, add all locations to the array of locations.
+    // If the control is clear, add all locations to the array of locations.
     if (value === ""){
       self.filteredLocations(self.locations);
     }
-    //Else, filter the locations to only those that share a similar name and
-    //replace the locations array with that new filtered array.
+    // Else, filter the locations to only those that share a similar name and
+    // replace the locations array with that new filtered array.
     else{
       self.filteredLocations(self.locations.filter(function(locations){
         return locations.name.toLowerCase().includes(value.toLowerCase());
@@ -149,22 +148,23 @@ function AppViewModel(){
     }
   }
 
+  // Gets the index of the selected List element in the DOM.
   this.getIndex = function(event){
     var index = event.target.getAttribute('data-index');
     return index;
   }
 
-  //Applies the filter to the markers on the map.
+  // Applies the filter to the markers on the map.
   this.filterButton = function(){
     var filteredLocationNames = [];
-    //Adds the names of the filtered locations to an array called
-    //filteredLocationNames.
+    // Adds the names of the filtered locations to an array called
+    // filteredLocationNames.
     self.filteredLocations().forEach(function(value){
       filteredLocationNames.push(value.name)
     });
 
-    //Disables or enables each marker on the map, depending on whether
-    //their names can be found in the filtered list of location names.
+    // Disables or enables each marker on the map, depending on whether
+    // their names can be found in the filtered list of location names.
     markers.forEach(function(value, index){
       if (filteredLocationNames.indexOf(value.title) > - 1) {
         value.setMap(map);
@@ -174,11 +174,14 @@ function AppViewModel(){
     });
   }
 
+  // Selects the location on the list and displays the infowindow on
+  // the map at the proper marker's location.
   this.selectLocation = function(data, event){
     var index = self.getIndex(event);
     populateInfoWindow(markers[index]);
   }
 
+  // Animates the bouncing of the markers if the user is hovering over it.
   this.ListMarkerBouncer = function(data, event){
     var index = self.getIndex(event);
     if (event.type === 'mouseover'){
@@ -189,6 +192,7 @@ function AppViewModel(){
     }
   }
 
+  // Expands and retracts the menu in the mobile web version of the app.
   this.openMobileControls = function(){
     $('.controls').first().toggleClass('expanded');
   }
