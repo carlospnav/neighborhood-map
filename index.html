@@ -2,30 +2,29 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet">
     <title>Neighborhood Map</title>
   </head>
   <body>
     <div class="container">
-      <section class="mobile-menu">
+      <header class="mobile-menu">
         <button class="fontawesome-reorder" id="mobile-btn" data-bind="click: openMobileControls"></button>
         <div class="mobile-title-container">
           <h3>Neighborhood Map</h3>
         </div>
-      </section>
-      <section class="controls">
+      </header>
+      <nav class="controls" data-bind="css: { expanded: mobileToggle }">
         <h3>Edinburgh Locations</h3>
         <div class="filter">
           <input type="text" id="filter" data-bind="event: { input: filterViewList }"> 
-          <button id="filter-btn" data-bind="event: { click: filterButton }">Filter</button>
         </div>
         <ul data-bind="foreach: filteredLocations" class="location-list">
-          <li data-bind="text: name, click: $parent.selectLocation, event: { mouseover: $parent.ListMarkerBouncer, mouseout: $parent.ListMarkerBouncer }, attr: { 'data-index': id }"></li>
+          <li data-bind="text: name, click: $parent.selectLocation, attr: { 'data-index': id }"></li>
         </ul>
-      </section>
-      <section class="map" id="map"></section>
+      </nav>
+      <main class="map" id="map"></main>
 
     </div>
     <script
@@ -34,7 +33,7 @@
       crossorigin="anonymous"></script>
     <script src="http://ajax.aspnetcdn.com/ajax/knockout/knockout-3.4.1.js"></script>
     <script src="js/app.js"></script>
-    <script async defer
+    <script async defer onerror="MapError()"
       src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC7DYDG8TIBOGtngxuGaH28ekjOl7CI7lo&v=3&callback=initMap">
     </script>
   </body>

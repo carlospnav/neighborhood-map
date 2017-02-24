@@ -1,7 +1,7 @@
 
 // MODEL - This is where the information the map uses to work is stored.
 function MapSettings() {
-  this.initialCoords = { lat: 55.9485947, lng: -3.1999135 },
+  this.initialCoords = { lat: 55.95034200000001, lng: -3.1862966 },
   this.locations = [
     { name: "The Meadows (park)", coords: { lat: 55.9412507 , lng: -3.191701 }, id: 0 },
     { name: "Edinburgh Castle", coords: { lat: 55.9485947 , lng: -3.1999135 }, id: 1 },
@@ -18,21 +18,27 @@ function MapSettings() {
     { name: "Grassmarket", coords: { lat: 55.9475383, lng: -3.1962969 }, id: 12 },
     { name: "Edinburgh Waverley railway station", coords: { lat: 55.9545669, lng: -3.1671449 }, id: 13 },
     { name: "Edinburgh Napier University", coords: { lat: 55.933459, lng: -3.2118371 }, id: 14 },
-  ],
-  this.styles = [{
-
-  }]
+  ];
 }
 var mapSettings = new MapSettings();
 
+function MapError(){
+  var map = $('#map');
+  map.addClass('container');
+  map.html('<div class="error-message">There was en error retrieving the map. Please refresh the page to try again.</div>');
+}
 
-
-var map, markers, infowindow, populateInfoWindow;
+var map, markers, infowindow, populateInfoWindow, previousMarker, disablePreviousMarker;
 function initMap(){
   // The Map is initialized here using the configuration we find in mapSettings.
   map = new google.maps.Map(document.getElementById('map'), {
     center: mapSettings.initialCoords,
     zoom: 13
+  });
+
+  // Centralizes the screen if a user resizes it. 
+  google.maps.event.addDomListener(window, 'resize', function(){
+    fitBounds();
   });
 
   // The initial PoI locations are created here and set to the map.
@@ -46,27 +52,35 @@ function initMap(){
         animation: google.maps.Animation.DROP,
         title: value.name,
       });
-      marker.addListener('click', function(){
-        populateInfoWindow(this);
-      });
-      marker.addListener('mouseover', function(e) {
+      marker.addListener('click', function(e){
+        disablePreviousMarker();
+
         this.setAnimation(google.maps.Animation.BOUNCE);
+        populateInfoWindow(this);
+        previousMarker = this;
         e.stop();
       });
-      marker.addListener('mouseout', function(e) {
-        this.setAnimation(null);
-        e.stop();
-      });
+
       tempMarkers.push(marker);
     });
     return tempMarkers;
   }
 
+  disablePreviousMarker = function(){
+    if (previousMarker !== undefined){
+      previousMarker.setAnimation(null);
+    }
+  };
   // Auxiliary function used to center the map and provide space
   // for the infowindows.
-  function fitBounds(marker){
-    map.setCenter(marker.getPosition());
-    map.panBy(0, -150);
+  function fitBounds(bounds){
+    if (bounds !== undefined){
+      map.setCenter(bounds.getPosition());
+      map.panBy(0, -150);
+    }
+    else{
+      map.setCenter(mapSettings.initialCoords);
+    }
   }
 
   // Instantiates a new infowindow to be used when the markers are selected.
@@ -115,28 +129,30 @@ function initMap(){
         infowindow.setContent(image.html() + blurb.html() + "<div class='attribution'>Powered by Wikipedia.</div>");
       },
       error: function(){
-        infowindow.setContent("<div class='info-error'>There was a problem with the Wikipedia search. Please try again later or contact the administrator.</div>")
+        infowindow.setContent("<div class='info-error'>There was a problem with the Wikipedia search. Please try again later or contact the administrator.</div>");
       }
     });
 
     // Open the info window on the marker.
     infowindow.open(map, marker);
     fitBounds(marker);
-  }
+  };
 }
 
 // Knockout ViewModel.
 function AppViewModel(){
   var self = this;
+  this.mobileToggle = ko.observable(false);
   this.locations = mapSettings.locations;
   this.filteredLocations = ko.observableArray(this.locations);
 
   // Filters the list of locations on the left Menu using the value
   // the user typed in the text control.
   this.filterViewList = function(data, event){
-    var value = event.target.value;
+    var value = event.target.value,
+        filteredLocationNames = [];
     // If the control is clear, add all locations to the array of locations.
-    if (value === ""){
+    if (value === ''){
       self.filteredLocations(self.locations);
     }
     // Else, filter the locations to only those that share a similar name and
@@ -146,40 +162,41 @@ function AppViewModel(){
         return locations.name.toLowerCase().includes(value.toLowerCase());
       }));
     }
-  }
 
-  // Gets the index of the selected List element in the DOM.
-  this.getIndex = function(event){
-    var index = event.target.getAttribute('data-index');
-    return index;
-  }
-
-  // Applies the filter to the markers on the map.
-  this.filterButton = function(){
-    var filteredLocationNames = [];
     // Adds the names of the filtered locations to an array called
     // filteredLocationNames.
     self.filteredLocations().forEach(function(value){
-      filteredLocationNames.push(value.name)
+      filteredLocationNames.push(value.name);
     });
 
     // Disables or enables each marker on the map, depending on whether
     // their names can be found in the filtered list of location names.
     markers.forEach(function(value, index){
       if (filteredLocationNames.indexOf(value.title) > - 1) {
-        value.setMap(map);
+        value.setVisible(true);
       }
       else
-        value.setMap(null);
+        value.setVisible(false);
     });
-  }
+  };
+
+  // Gets the index of the selected List element in the DOM.
+  this.getIndex = function(event){
+    var index = event.target.getAttribute('data-index');
+    return index;
+  };
 
   // Selects the location on the list and displays the infowindow on
   // the map at the proper marker's location.
   this.selectLocation = function(data, event){
-    var index = self.getIndex(event);
-    populateInfoWindow(markers[index]);
-  }
+    var index = self.getIndex(event),
+        currentMarker = markers[index];
+    // Prevents previous marker to keep its animation.    
+    disablePreviousMarker();
+    currentMarker.setAnimation(google.maps.Animation.BOUNCE);
+    populateInfoWindow(currentMarker);
+    previousMarker = currentMarker;
+  };
 
   // Animates the bouncing of the markers if the user is hovering over it.
   this.ListMarkerBouncer = function(data, event){
@@ -190,12 +207,18 @@ function AppViewModel(){
     else if(event.type ==='mouseout'){
       markers[index].setAnimation(null);      
     }
-  }
+  };
 
   // Expands and retracts the menu in the mobile web version of the app.
   this.openMobileControls = function(){
-    $('.controls').first().toggleClass('expanded');
-  }
+    var toggle = this.mobileToggle();
+    if (toggle){
+      this.mobileToggle(false);
+    }
+    else{
+      this.mobileToggle(true);
+    }
+  };
 }
 
 ko.applyBindings(new AppViewModel());
